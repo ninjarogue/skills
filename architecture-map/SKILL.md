@@ -46,10 +46,18 @@ Answer these from the repo. Do not ask.
 | Monorepo | `workspaces`, `pnpm-workspace.yaml`, `turbo.json` |
 | Existing map | a previous `architecture.config.json` — if present, this is an **update** |
 
-Then run the proposer to get a first read of the shape:
+Then run the proposer to get a first read of the shape. It lives beside this
+file, not in the repo you are mapping, so resolve its path first:
+
+> **`SKILL_DIR`** — the absolute path of the directory containing *this
+> SKILL.md*, which your harness reported when it loaded this file. It differs
+> per tool (`~/.claude/skills/architecture-map`,
+> `~/.codex/skills/architecture-map`, `~/.agents/skills/architecture-map`, a
+> plugin cache, or a project-local `.claude/skills/…`). Substitute the literal
+> path; do not rely on an environment variable.
 
 ```bash
-node scripts/propose-coverage.mjs --root . --target 22
+node "$SKILL_DIR/scripts/propose-coverage.mjs" --root . --target 22
 ```
 
 It returns directory clusters with file counts and line totals, plus suggested
@@ -58,7 +66,9 @@ it *does*.
 
 ## Step 2 — Ask exactly four questions
 
-One `AskUserQuestion` batch, then work uninterrupted.
+Ask them together — in one structured-question call if your harness has one
+(Claude Code: `AskUserQuestion`), otherwise as a single numbered message — then
+work uninterrupted. Do not drip-feed them one at a time.
 
 1. **Where should it live?** Recommend `/~/architecture` — a `~` segment reads
    as "internal tool" and sorts away from real routes. Offer `/architecture` and
@@ -72,8 +82,8 @@ One `AskUserQuestion` batch, then work uninterrupted.
 
 ## Step 3 — Install the core
 
-Copy `assets/core/`, `assets/stores/` and `assets/components/` into the repo
-under the path you agreed (e.g. `src/architecture/`). These are dependency-free
+Copy `$SKILL_DIR/assets/core/`, `assets/stores/` and `assets/components/` into
+the repo under the path you agreed (e.g. `src/architecture/`). These are dependency-free
 apart from React, and typecheck under `strict`.
 
 Then write `architecture.config.json` at the repo root:
@@ -87,7 +97,8 @@ Then write `architecture.config.json` at the repo root:
 }
 ```
 
-Copy `scripts/architecture-sync.mjs` into the repo's own `scripts/` and add
+Copy `$SKILL_DIR/scripts/architecture-sync.mjs` into the repo's own `scripts/`
+and add
 `"architecture:sync": "node scripts/architecture-sync.mjs"`.
 
 ### Adapt the theme
