@@ -71,8 +71,9 @@ export function deriveSize(
 ): { w: number; d: number } {
   switch (archetype) {
     case 'fin-row':
-      // One cell per fin, plus a margin, so the fins are not shoulder to shoulder.
-      return { w: Math.max(3, Math.round((params?.count ?? 3) * 0.75)), d: 2 }
+      // A full cell of pitch per fin. Tighter than this and a dozen members
+      // read as one hatched wall instead of a row you can count.
+      return { w: Math.max(3, params?.count ?? 3), d: 2 }
     case 'tower':
       return { w: 2, d: 2 }
     case 'slab-stack':
@@ -86,9 +87,18 @@ export function deriveSize(
 
 /* ------------------------------------------------------------- packing */
 
-/** Room between buildings inside a plot, and between the plots themselves. */
-const BUILDING_GAP = 1
-const DISTRICT_GAP = 5
+/**
+ * Room between buildings inside a plot, and between the plots themselves.
+ *
+ * The district figure is not decoration. `deriveDistricts` grows each plate
+ * past its buildings — 1.2 cells on three sides, 2.2 at the front where the
+ * flag stands — so two plots packed closer than the sum of those paddings
+ * produce *overlapping plates*, and the neighborhoods stop reading as separate
+ * places. 6 clears 1.2 + 2.2 with room to spare, which is what lets a reader
+ * see the seams.
+ */
+const BUILDING_GAP = 1.5
+const DISTRICT_GAP = 6
 
 type Placed<T> = { item: T; footprint: Footprint }
 type Box = { w: number; d: number }
@@ -99,7 +109,7 @@ type Box = { w: number; d: number }
  * dozen-odd buildings a readable district holds — the alternative is a
  * bin-packer whose output nobody can predict from one run to the next.
  */
-function shelfPack<T>(items: { item: T; size: Box }[], maxWidth: number): {
+function shelfPack<T>(items: { item: T; size: Box }[], maxWidth: number, gap: number): {
   placed: Placed<T>[]
   size: Box
 } {
@@ -111,22 +121,22 @@ function shelfPack<T>(items: { item: T; size: Box }[], maxWidth: number): {
 
   for (const { item, size } of items) {
     if (gx > 0 && gx + size.w > maxWidth) {
-      gy += rowDepth + BUILDING_GAP
+      gy += rowDepth + gap
       gx = 0
       rowDepth = 0
     }
     placed.push({ item, footprint: { gx, gy, w: size.w, d: size.d } })
-    gx += size.w + BUILDING_GAP
+    gx += size.w + gap
     rowDepth = Math.max(rowDepth, size.d)
-    widest = Math.max(widest, gx - BUILDING_GAP)
+    widest = Math.max(widest, gx - gap)
   }
 
   return { placed, size: { w: widest, d: gy + rowDepth } }
 }
 
 /** Roughly square is what reads best on a diamond grid. */
-function targetWidth(sizes: Box[]): number {
-  const area = sizes.reduce((sum, s) => sum + (s.w + BUILDING_GAP) * (s.d + BUILDING_GAP), 0)
+function targetWidth(sizes: Box[], gap: number): number {
+  const area = sizes.reduce((sum, s) => sum + (s.w + gap) * (s.d + gap), 0)
   const side = Math.sqrt(area)
   return Math.max(Math.ceil(side), Math.max(...sizes.map((s) => s.w), 1))
 }
@@ -152,14 +162,18 @@ export function packLayout<T>(
     const sorted = [...members].sort((a, b) => b.size.w * b.size.d - a.size.w * a.size.d)
     return shelfPack(
       sorted.map((m) => ({ item: m.item, size: m.size })),
-      targetWidth(sorted.map((m) => m.size)),
+      targetWidth(sorted.map((m) => m.size), BUILDING_GAP),
+      BUILDING_GAP,
     )
   })
 
   // Then the plots themselves, on the same rule one scale up.
+  // The gap here is what keeps the plates apart, not the target width — the
+  // width only decides how many plots share a row.
   const plots = shelfPack(
     packedDistricts.map((d, i) => ({ item: i, size: d.size })),
-    targetWidth(packedDistricts.map((d) => d.size)) + DISTRICT_GAP,
+    targetWidth(packedDistricts.map((d) => d.size), DISTRICT_GAP),
+    DISTRICT_GAP,
   )
 
   const out = new Map<T, Footprint>()
