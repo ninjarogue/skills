@@ -84,7 +84,11 @@ waypoint usually fixes it; see `geometry.md`.
 ## Flows
 
 Three to six. A flow is an ordered list of edge ids, plus one payload noun.
-These are what a newcomer presses first, and what the page is *for*.
+These are what a newcomer presses first, and what the page is *for*. The flows
+map draws that list as a sequence: the modules that appear, left to right, and
+each step as a message running down the page. It is not a second diagram
+language and not the city with a highlight — same buildings, same packets,
+different axes.
 
 Find them by tracing real paths through the code:
 

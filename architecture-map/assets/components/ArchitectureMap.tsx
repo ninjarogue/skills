@@ -163,7 +163,9 @@ export default function ArchitectureMap({ data }: { data: ArchitectureData }) {
             borderTop: `1px solid ${paint.border}`, padding: '0 20px',
           }}>
             <span style={LABEL}>
-              choose a flow · space plays · drag to pan · scroll to zoom · − + 0 · esc clears
+              {activeFlow
+                ? 'sequence of this flow · space plays · drag to pan · esc returns to the city'
+                : 'choose a flow · space plays · drag to pan · scroll to zoom · − + 0 · esc clears'}
             </span>
           </footer>
         </div>

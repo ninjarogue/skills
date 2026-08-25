@@ -5,7 +5,7 @@ any harness that reads it (Claude Code, Codex, Cursor, Gemini CLI, and others).
 
 | Skill | What it does |
 |---|---|
-| [architecture-map](architecture-map/) | Builds an interactive isometric map of a repository — buildings sized by real measurements, flows tracing real call paths, and a drift counter that fails CI when the map falls behind the code. |
+| [architecture-map](architecture-map/) | Builds an interactive isometric map of a repository — buildings sized by real measurements, flows tracing real call paths, and a drift counter that fails CI when the map falls behind the code. Open the [playground](architecture-map/playground/) to see the city and a flow's sequence map. |
 
 ## Installing
 

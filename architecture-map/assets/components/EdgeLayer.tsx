@@ -3,6 +3,7 @@
 import { arrowhead, type EdgeGeometry } from '../core/routes'
 import { pointsAttr } from '../core/iso'
 import { edgeTenses, positionAt, type EdgeTense, type FlowProgram } from '../core/program'
+import { sourceEdgeId } from '../core/sequence'
 import type { ArchEdge } from '../core/types'
 import { useClockTimeMs } from '../stores/useFlowClock'
 import type { Selection } from '../stores/useMapView'
@@ -67,9 +68,10 @@ export default function EdgeLayer({
         const geom = geometry.get(edge.id)
         if (!geom) return null
         const tense = tenses.get(edge.id) ?? null
+        const sourceId = sourceEdgeId(edge.id)
         const emphasized =
-          (hover?.kind === 'edge' && hover.id === edge.id) ||
-          (selection?.kind === 'edge' && selection.id === edge.id)
+          (hover?.kind === 'edge' && (hover.id === edge.id || hover.id === sourceId)) ||
+          (selection?.kind === 'edge' && (selection.id === edge.id || selection.id === sourceId))
         const style = paintFor(edge, tense, emphasized, program !== null)
         const head = edge.kind === 'support' ? null : arrowhead(geom)
 

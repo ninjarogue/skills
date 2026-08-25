@@ -150,6 +150,9 @@ otherwise cut through a building.
 **Flows** — 3–6, each an ordered list of edge ids with a payload name. These are
 the page's verbs and the first thing a newcomer presses. Find them by tracing
 real paths: sign-in, the main create/read loop, the expensive background job.
+The flows map is a sequence of those steps — participants across, time down,
+the same packets — not the city with a path lit on it. Groups, nodes and edges
+keep the neighbourhoods.
 
 **Coverage** — write `coverage.json` so every source file is claimed exactly
 once. `$`-prefixed keys are notes. Use `priority` when a nested directory must

@@ -1,0 +1,308 @@
+import { deriveArchetype, deriveHeight, deriveSize, packLayout } from '../../assets/core/layout'
+import type { ArchEdge, ArchFlow, ArchNode, Group } from '../../assets/core/types'
+import type { ArchitectureData } from '../../assets/components/ArchitectureMap'
+
+/**
+ * A map of this skill, for the playground. Prose and routes are authored from
+ * the files next door; counts are the line totals `wc` reported when the
+ * playground was written. Nothing here is a product flow.
+ */
+
+export const GROUPS: Group[] = [
+  { id: 'contract', label: 'The contract' },
+  { id: 'geometry', label: 'The floor' },
+  { id: 'narration', label: 'The narration' },
+  { id: 'stage', label: 'The stage' },
+]
+
+const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] = [
+  {
+    id: 'types',
+    code: 'TY',
+    name: 'Types',
+    role: 'the schema',
+    group: 'contract',
+    whatItDoes: 'Names the authored table: groups, nodes, edges, flows. Everything else reads through this.',
+    howItsBuilt: 'Kept apart from the data so the generated measurements have something to merge into.',
+    files: ['assets/core/types.ts'],
+    stack: ['TypeScript'],
+    count: 1,
+    loc: 67,
+  },
+  {
+    id: 'iso',
+    code: 'IS',
+    name: 'Iso',
+    role: 'the projection',
+    group: 'geometry',
+    whatItDoes: 'Turns grid cells into screen points. One function, [[toScreen]], is what the floor, the buildings and the packets all agree on.',
+    howItsBuilt: 'Classic 2:1 dimetric, plus Manhattan routing and polyline arithmetic so a payload never asks the DOM where it is.',
+    files: ['assets/core/iso.ts'],
+    count: 1,
+    loc: 142,
+  },
+  {
+    id: 'archetypes',
+    code: 'AR',
+    name: 'Archetypes',
+    role: 'the building kit',
+    group: 'geometry',
+    whatItDoes: 'Turns a footprint into faces: cubes, towers, fin-rows, the port a packet disappears into.',
+    howItsBuilt: 'Pure functions of footprint and height. The React layer only maps faces to polygons.',
+    files: ['assets/core/archetypes.ts'],
+    count: 1,
+    loc: 120,
+  },
+  {
+    id: 'layout',
+    code: 'LA',
+    name: 'Layout',
+    role: 'the packer',
+    group: 'geometry',
+    whatItDoes: 'Derives height, archetype and footprint from a file count, then shelves neighbourhoods so the skyline moves with the code.',
+    howItsBuilt: 'Shelf packing, twice: buildings inside a plot, then the plots against each other in legend order.',
+    files: ['assets/core/layout.ts'],
+    count: 1,
+    loc: 191,
+  },
+  {
+    id: 'districts',
+    code: 'DI',
+    name: 'Districts',
+    role: 'the plots',
+    group: 'geometry',
+    whatItDoes: 'Grows a plate around each group\'s buildings and plants a flag at the front, where a tower cannot bury it.',
+    howItsBuilt: 'Rects are derived, never authored — a hand-written plot would be a second claim about where a group lives.',
+    files: ['assets/core/districts.ts'],
+    count: 1,
+    loc: 80,
+  },
+  {
+    id: 'routes',
+    code: 'RT',
+    name: 'Routes',
+    role: 'the city streets',
+    group: 'geometry',
+    whatItDoes: 'Turns every authored edge into a polyline with arc lengths, so the line, the arrow and the packet agree on where the path is.',
+    howItsBuilt: 'One table computed once. Three call sites deriving it separately would disagree by a pixel.',
+    files: ['assets/core/routes.ts'],
+    count: 1,
+    loc: 53,
+  },
+  {
+    id: 'scene',
+    code: 'SC',
+    name: 'Scene',
+    role: 'the camera box',
+    group: 'geometry',
+    whatItDoes: 'Paint-orders the city, rules the floor grid, and fits a camera to whatever is standing.',
+    howItsBuilt: 'DOM-free, so geometry tests can pin it and the canvas keeps nothing but interaction.',
+    files: ['assets/core/scene.ts'],
+    count: 1,
+    loc: 105,
+  },
+  {
+    id: 'sequence',
+    code: 'SQ',
+    name: 'Sequence',
+    role: 'the flows map',
+    group: 'narration',
+    whatItDoes: 'Lays a flow out as a sequence: the modules that speak sit across the top, each step a message further down the page.',
+    howItsBuilt: 'A layout swap, not a second renderer. Same buildings, same packets; city footprints and waypoints stay behind.',
+    files: ['assets/core/sequence.ts'],
+    count: 1,
+    loc: 200,
+  },
+  {
+    id: 'program',
+    code: 'PR',
+    name: 'Program',
+    role: 'the beat sheet',
+    group: 'narration',
+    whatItDoes: 'Turns a flow into dwell, travel, dwell, loop. Captions, tense and packet position are all derived from (program, time).',
+    howItsBuilt: 'The clock is a wrapping counter. Meaning lives here so tests can pin boundaries without a renderer.',
+    files: ['assets/core/program.ts'],
+    count: 1,
+    loc: 241,
+  },
+  {
+    id: 'map-view',
+    code: 'VW',
+    name: 'Map view',
+    role: 'the pointer',
+    group: 'narration',
+    whatItDoes: 'Holds the selection, the hover, and which flow is the map right now.',
+    howItsBuilt: 'A module singleton behind useSyncExternalStore, because the rail, the canvas and the panel all read it.',
+    files: ['assets/stores/useMapView.ts'],
+    count: 1,
+    loc: 91,
+  },
+  {
+    id: 'flow-clock',
+    code: 'CL',
+    name: 'Flow clock',
+    role: 'the transport',
+    group: 'narration',
+    whatItDoes: 'Advances milliseconds over the active program. Play, pause, speed, the step buttons — one rAF loop.',
+    howItsBuilt: 'Subscription tiers keep the 60fps remounts on the packet, not on the buildings.',
+    files: ['assets/stores/useFlowClock.ts'],
+    count: 1,
+    loc: 189,
+  },
+  {
+    id: 'map-camera',
+    code: 'CA',
+    name: 'Camera',
+    role: 'the viewpoint',
+    group: 'stage',
+    whatItDoes: 'Pans, zooms, and refits when the scene key changes — city to sequence is a new key, so the frame recentres.',
+    howItsBuilt: 'Derived until touched. A mismatched key falls back to the computed fit; no effect writes the camera.',
+    files: ['assets/stores/useMapCamera.ts'],
+    count: 1,
+    loc: 166,
+  },
+  {
+    id: 'iso-canvas',
+    code: 'CV',
+    name: 'Canvas',
+    role: 'the stage',
+    group: 'stage',
+    whatItDoes: 'Builds the city, or the sequence, and paints plates, edges, buildings, packets in that order.',
+    howItsBuilt: 'The flow view swaps layout here and then reuses the layers. It does not overlay a diagram on the city.',
+    files: ['assets/components/IsoCanvas.tsx'],
+    count: 1,
+    loc: 178,
+  },
+  {
+    id: 'edge-layer',
+    code: 'ED',
+    name: 'Edges',
+    role: 'the packets',
+    group: 'stage',
+    whatItDoes: 'Draws the paths and the travelling payload. Weight is kind; dash is the step being walked.',
+    howItsBuilt: 'The only component on the millisecond clock. Everything else snapshots a beat index.',
+    files: ['assets/components/EdgeLayer.tsx'],
+    count: 1,
+    loc: 176,
+  },
+  {
+    id: 'building-glyph',
+    code: 'BL',
+    name: 'Buildings',
+    role: 'the mass',
+    group: 'stage',
+    whatItDoes: 'Extrudes one module. Roof chip at rest, full name when it matters.',
+    howItsBuilt: 'Paint from theme.ts through SVG attributes, so the map re-themes without a class graph.',
+    files: ['assets/components/BuildingGlyph.tsx'],
+    count: 1,
+    loc: 129,
+  },
+  {
+    id: 'side-panels',
+    code: 'RA',
+    name: 'Rail',
+    role: 'the index',
+    group: 'stage',
+    whatItDoes: 'Lists the flows first — they are the verbs — then the modules in floor order. The panel is the reading.',
+    howItsBuilt: 'Choosing a flow sets the active id; the canvas decides that means a sequence, not a highlight.',
+    files: ['assets/components/SidePanels.tsx', 'assets/components/ArchitectureMap.tsx'],
+    count: 2,
+    loc: 428,
+  },
+]
+
+const measured = DRAFT.map((node) => {
+  const measure = { count: node.count ?? 1, loc: node.loc ?? 0 }
+  const { archetype, params } = deriveArchetype(measure)
+  const height = deriveHeight(measure)
+  const size = deriveSize(archetype, params, measure)
+  return { node, archetype, params, height, size }
+})
+
+const footprints = packLayout(
+  measured.map((m) => ({ item: m.node.id, group: m.node.group, size: m.size })),
+  GROUPS.map((g) => g.id),
+)
+
+export const NODES: ArchNode[] = measured.map((m) => ({
+  ...m.node,
+  archetype: m.archetype,
+  params: m.params,
+  height: m.height,
+  footprint: footprints.get(m.node.id)!,
+}))
+
+export const EDGES: ArchEdge[] = [
+  { id: 'rail-view', from: 'side-panels', to: 'map-view', kind: 'call', label: 'setActiveFlow', flowIds: ['narrate'] },
+  { id: 'view-canvas', from: 'map-view', to: 'iso-canvas', kind: 'data', label: 'view state', flowIds: ['narrate', 'browse'] },
+  { id: 'canvas-sequence', from: 'iso-canvas', to: 'sequence', kind: 'call', label: 'buildSequenceLayout', flowIds: ['narrate'] },
+  { id: 'sequence-program', from: 'sequence', to: 'program', kind: 'data', label: 'route geometry', flowIds: ['narrate'] },
+  { id: 'canvas-program', from: 'iso-canvas', to: 'program', kind: 'call', label: 'buildFlowProgram', flowIds: ['narrate'] },
+  { id: 'canvas-clock', from: 'iso-canvas', to: 'flow-clock', kind: 'call', label: 'configureClock', flowIds: ['narrate'] },
+  { id: 'clock-edges', from: 'flow-clock', to: 'edge-layer', kind: 'data', label: 'timeMs', flowIds: ['narrate'] },
+
+  { id: 'glyph-canvas', from: 'building-glyph', to: 'iso-canvas', kind: 'call', label: 'onSelect', flowIds: ['browse'] },
+  { id: 'canvas-view', from: 'iso-canvas', to: 'map-view', kind: 'call', label: 'select', flowIds: ['browse'] },
+  { id: 'view-rail', from: 'map-view', to: 'side-panels', kind: 'data', label: 'selection', flowIds: ['browse'] },
+
+  { id: 'canvas-routes', from: 'iso-canvas', to: 'routes', kind: 'call', label: 'buildEdgeGeometry', flowIds: ['route'] },
+  { id: 'routes-arch', from: 'routes', to: 'archetypes', kind: 'call', label: 'portAnchor', flowIds: ['route'] },
+  { id: 'routes-iso', from: 'routes', to: 'iso', kind: 'call', label: 'manhattan', flowIds: ['route'] },
+  { id: 'canvas-edges', from: 'iso-canvas', to: 'edge-layer', kind: 'data', label: 'city polylines', flowIds: ['route'] },
+
+  { id: 'canvas-scene', from: 'iso-canvas', to: 'scene', kind: 'call', label: 'buildScene', flowIds: ['pack'] },
+  { id: 'scene-districts', from: 'scene', to: 'districts', kind: 'call', label: 'deriveDistricts', flowIds: ['pack'] },
+  { id: 'scene-iso', from: 'scene', to: 'iso', kind: 'call', label: 'sceneBounds', flowIds: ['pack'] },
+  { id: 'canvas-camera', from: 'iso-canvas', to: 'map-camera', kind: 'call', label: 'fitCamera', flowIds: ['pack'] },
+  { id: 'canvas-glyph', from: 'iso-canvas', to: 'building-glyph', kind: 'data', label: 'placed nodes', flowIds: ['pack'] },
+  { id: 'glyph-arch', from: 'building-glyph', to: 'archetypes', kind: 'call', label: 'buildingFaces', flowIds: ['pack'] },
+  { id: 'layout-iso', from: 'layout', to: 'iso', kind: 'data', label: 'footprints', flowIds: ['pack'] },
+]
+
+export const FLOWS: ArchFlow[] = [
+  {
+    id: 'narrate',
+    name: 'Play a flow',
+    payload: 'beat program',
+    summary: 'A rail click becomes a sequence: layout the participants, build the beat sheet, and run the packet down the messages.',
+    route: ['rail-view', 'view-canvas', 'canvas-sequence', 'sequence-program', 'canvas-program', 'canvas-clock', 'clock-edges'],
+  },
+  {
+    id: 'browse',
+    name: 'Read a module',
+    payload: 'selection',
+    summary: 'A building click writes the selection; the rail and the panel follow it.',
+    route: ['glyph-canvas', 'canvas-view', 'view-canvas', 'view-rail'],
+  },
+  {
+    id: 'route',
+    name: 'Draw a path',
+    payload: 'polyline',
+    summary: 'City edges are still geography: port to port, Manhattan, then the same edge layer.',
+    route: ['canvas-routes', 'routes-arch', 'routes-iso', 'canvas-edges'],
+  },
+  {
+    id: 'pack',
+    name: 'Fit the city',
+    payload: 'scene',
+    summary: 'The neighbourhoods are packed, framed, and extruded. This is the map that is not a flow.',
+    route: ['layout-iso', 'canvas-scene', 'scene-districts', 'scene-iso', 'canvas-camera', 'canvas-glyph', 'glyph-arch'],
+  },
+]
+
+export const ARCHITECTURE: ArchitectureData = {
+  groups: GROUPS,
+  nodes: NODES,
+  edges: EDGES,
+  flows: FLOWS,
+  intro: {
+    title: 'architecture-map',
+    lede: 'This skill, mapped as itself',
+    whatItDoes:
+      'An isometric city for neighbourhoods and modules, and a sequence for each authored flow. Counts are measured; prose and routes are written.',
+    howItsBuilt:
+      'The transferable idea is a split, not a component library. The playground is here so the flows map can be opened without installing the skill into another repo.',
+  },
+  unmapped: [],
+  repo: 'ninjarogue/skills',
+}
