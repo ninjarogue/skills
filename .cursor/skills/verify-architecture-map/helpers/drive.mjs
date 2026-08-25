@@ -17,6 +17,7 @@ const consolePath = `${evidenceDir}/${feature}.console.txt`
 const profileDir = `/tmp/verify-architecture-map-chrome-${process.pid}`
 const consoleEntries = []
 const assertions = []
+let favicon404Seen = false
 
 await mkdir(evidenceDir, { recursive: true })
 await mkdir(profileDir, { recursive: true })
@@ -155,13 +156,27 @@ async function connect() {
       record('error', 'exception', message.params.exceptionDetails.text)
     }
     if (message.method === 'Log.entryAdded') {
-      record(message.params.entry.level, message.params.entry.source, message.params.entry.text)
+      const entry = message.params.entry
+      const favicon404 =
+        entry.url?.endsWith('/favicon.ico') ||
+        (favicon404Seen && entry.source === 'network' && entry.text.includes('404'))
+      record(
+        favicon404 ? 'ignored' : entry.level,
+        entry.source,
+        `${entry.text}${entry.url ? ` ${entry.url}` : ''}`,
+      )
     }
     if (message.method === 'Network.loadingFailed' && !message.params.canceled) {
       record('error', 'network', `${message.params.errorText} ${message.params.type}`)
     }
     if (message.method === 'Network.responseReceived' && message.params.response.status >= 400) {
-      record('error', 'network', `${message.params.response.status} ${message.params.response.url}`)
+      const favicon404 = message.params.response.url.endsWith('/favicon.ico')
+      favicon404Seen ||= favicon404
+      record(
+        favicon404 ? 'ignored' : 'error',
+        'network',
+        `${message.params.response.status} ${message.params.response.url}`,
+      )
     }
   })
 
