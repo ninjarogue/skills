@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "tsx --test ../assets/core/sequence.test.ts"
+    "test": "tsx --test sequence.test.ts"
   },
   "dependencies": {
     "react": "^19.1.0",

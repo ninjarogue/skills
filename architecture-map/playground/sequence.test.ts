@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { footprintsOverlap } from './iso'
-import { buildFlowProgram } from './program'
-import { buildSequenceLayout, sourceEdgeId, sequenceEdgeId } from './sequence'
-import type { ArchEdge, ArchFlow, ArchNode } from './types'
+import { footprintsOverlap } from '../assets/core/iso'
+import { buildFlowProgram } from '../assets/core/program'
+import { buildSequenceLayout, sourceEdgeId, sequenceEdgeId } from '../assets/core/sequence'
+import type { ArchEdge, ArchFlow, ArchNode } from '../assets/core/types'
 
 function node(id: string, w = 2, d = 2): ArchNode {
   return {
