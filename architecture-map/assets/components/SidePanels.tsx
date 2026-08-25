@@ -179,7 +179,7 @@ export function ExplainerPanel({
 
   const node = selection?.kind === 'node' ? nodes.find((n) => n.id === selection.id) : undefined
   const edge = selection?.kind === 'edge'
-    ? edges.find((e) => e.id === selection.id || e.id === sourceEdgeId(selection.id))
+    ? edges.find((e) => e.id === sourceEdgeId(selection.id))
     : undefined
   const flow = !node && !edge ? flows.find((f) => f.id === activeFlowId) : undefined
 
@@ -195,10 +195,8 @@ export function ExplainerPanel({
         : intro.lede
   const what = node?.whatItDoes ?? (edge ? `A ${edge.kind} path. ${edge.label}.` : flow?.summary ?? intro.whatItDoes)
   const how = node?.howItsBuilt ?? (flow ? undefined : intro.howItsBuilt)
-  const currentEdgeId =
-    program && beatIndex >= 0 && program.beats[beatIndex]?.kind === 'travel'
-      ? sourceEdgeId(program.beats[beatIndex].edgeId)
-      : null
+  const activeBeat = program && beatIndex >= 0 ? program.beats[beatIndex] : undefined
+  const currentEdgeIndex = activeBeat?.kind === 'travel' ? activeBeat.edgeIndex : null
   const flowSteps = flow
     ? flow.route.flatMap((id) => {
         const step = edges.find((e) => e.id === id)
@@ -230,7 +228,7 @@ export function ExplainerPanel({
           <h3 style={LABEL}>Messages</h3>
           <ol style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
             {flowSteps.map((step, i) => {
-              const current = step.id === currentEdgeId
+              const current = i === currentEdgeIndex
               const from = nodes.find((n) => n.id === step.from)?.name ?? step.from
               const to = nodes.find((n) => n.id === step.to)?.name ?? step.to
               return (

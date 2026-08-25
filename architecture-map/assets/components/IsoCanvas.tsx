@@ -4,7 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { buildFlowProgram, currentTargetNodeId, flowNodeIdSet, visitedNodeIds } from '../core/program'
 import { buildEdgeGeometry } from '../core/routes'
 import { buildScene } from '../core/scene'
-import { buildSequenceLayout, buildSequenceScene, sourceEdgeId, type SequenceLayout } from '../core/sequence'
+import { buildSequenceLayout, buildSequenceScene, type SequenceLayout } from '../core/sequence'
 import type { ArchEdge, ArchFlow, ArchNode, Group } from '../core/types'
 import { configureClock, useClockBeatIndex } from '../stores/useFlowClock'
 import { useMapCamera } from '../stores/useMapCamera'
@@ -175,8 +175,8 @@ export default function IsoCanvas({
               beatIndex={beatIndex}
               hover={view.hover}
               selection={view.selection}
-              onSelect={(id) => selectItem({ kind: 'edge', id: sourceEdgeId(id) })}
-              onHover={(id) => setHover(id ? { kind: 'edge', id: sourceEdgeId(id) } : null)}
+              onSelect={(id) => selectItem({ kind: 'edge', id })}
+              onHover={(id) => setHover(id ? { kind: 'edge', id } : null)}
             />
 
             {scene.shapes.map((node) => (
