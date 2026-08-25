@@ -314,7 +314,8 @@ try {
   chrome.kill('SIGTERM')
   await Promise.race([once(chrome, 'exit'), delay(2000)])
   if (chrome.exitCode === null) chrome.kill('SIGKILL')
-  await rm(profileDir, { recursive: true, force: true })
+  await delay(200)
+  await rm(profileDir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })
 }
 
 console.log(`feature=${feature}`)
