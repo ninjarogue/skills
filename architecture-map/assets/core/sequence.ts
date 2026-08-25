@@ -4,16 +4,6 @@ import type { EdgeGeometry } from './routes'
 import type { Scene } from './scene'
 import type { ArchEdge, ArchFlow, ArchNode } from './types'
 
-/**
- * The flows map: a sequence, not the city.
- *
- * Groups, nodes and edges keep the isometric neighbourhoods. A flow is a
- * different claim — who talks, in what order — so it gets a different layout
- * of the *same* glyphs and packets: participants in a row, time running down,
- * each authored step a message. City footprints and `via` waypoints stay
- * behind; they answer geography, and a sequence is not a place.
- */
-
 const COL_GAP = 3
 const MESSAGE_ROW = 56
 const MESSAGE_PAD = 36
@@ -24,7 +14,6 @@ export function sequenceEdgeId(index: number, edgeId: string): string {
   return `${index}::${edgeId}`
 }
 
-/** Strip the step tag so a sequence message still names its authored edge. */
 export function sourceEdgeId(id: string): string {
   const split = id.indexOf('::')
   if (split <= 0) return id
@@ -42,11 +31,6 @@ export type SequenceLayout = {
   lifelines: Lifeline[]
 }
 
-/**
- * Participants in first-appearance order along the route, then each step as
- * a message on the next row. Repeated edges become two rows — the same call
- * at two times — which is why the drawn edge ids are tagged with the step.
- */
 export function buildSequenceLayout(
   flow: ArchFlow,
   nodes: readonly ArchNode[],
@@ -139,10 +123,6 @@ export function buildSequenceLayout(
   }
 }
 
-/**
- * Same buildings, a new street: origins sit on a constant-depth line so the
- * row reads left-to-right on screen, not as a walk into the city.
- */
 function placeParticipants(nodes: readonly ArchNode[]): ArchNode[] {
   let gx = 0
   return nodes.map((node) => {

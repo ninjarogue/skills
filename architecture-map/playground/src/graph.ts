@@ -2,12 +2,6 @@ import { deriveArchetype, deriveHeight, deriveSize, packLayout } from '../../ass
 import type { ArchEdge, ArchFlow, ArchNode, Group } from '../../assets/core/types'
 import type { ArchitectureData } from '../../assets/components/ArchitectureMap'
 
-/**
- * A map of this skill, for the playground. Prose and routes are authored from
- * the files next door; counts are the line totals `wc` reported when the
- * playground was written. Nothing here is a product flow.
- */
-
 export const GROUPS: Group[] = [
   { id: 'contract', label: 'The contract' },
   { id: 'geometry', label: 'The floor' },

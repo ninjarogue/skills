@@ -15,11 +15,7 @@ import EdgeLayer, { FlowChoreography } from './EdgeLayer'
 import { paint } from './theme'
 
 /**
- * The stage: one SVG, one camera, one scene — or two scenes, same paint.
- *
- * Groups, nodes and edges share the city. A flow does not reuse that geography:
- * it swaps the layout for a sequence of the same buildings and packets, then
- * hands the result back to the layers that already know how to draw them.
+ * The stage: one SVG, one camera, one scene.
  *
  * The camera is a translate+scale on a single group, in *element pixels* — the
  * SVG has no viewBox, so client coordinates and user units are the same thing

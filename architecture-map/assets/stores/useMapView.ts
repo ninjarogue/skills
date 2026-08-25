@@ -54,9 +54,6 @@ function set(next: Partial<MapView>) {
 }
 
 export function select(selection: Selection | null): void {
-  // The city treats a click as leaving the flow — a module and a narration
-  // talking at once is the page arguing with itself. The sequence *is* the
-  // flow, so pointing at a participant or a message stays on that map.
   if (state.activeFlowId) {
     set({ selection })
     return
