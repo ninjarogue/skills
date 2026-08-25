@@ -48,6 +48,7 @@ The repository has no Playwright or Cypress harness. Use the bundled CDP driver:
 node .cursor/skills/verify-architecture-map/helpers/drive.mjs city-browse
 node .cursor/skills/verify-architecture-map/helpers/drive.mjs play-a-flow
 node .cursor/skills/verify-architecture-map/helpers/drive.mjs rail-types
+node .cursor/skills/verify-architecture-map/helpers/drive.mjs repeated-step
 ```
 
 Each invocation starts an isolated headless Chrome with a dynamic debugging
@@ -65,6 +66,7 @@ Evidence is stable across Cleanup:
 | City browse | `/opt/cursor/artifacts/verify-architecture-map/city-browse.png` | `/opt/cursor/artifacts/verify-architecture-map/city-browse.console.txt` |
 | Play a flow | `/opt/cursor/artifacts/verify-architecture-map/play-a-flow.png` | `/opt/cursor/artifacts/verify-architecture-map/play-a-flow.console.txt` |
 | Rail Types | `/opt/cursor/artifacts/verify-architecture-map/rail-types.png` | `/opt/cursor/artifacts/verify-architecture-map/rail-types.console.txt` |
+| Repeated step | `/opt/cursor/artifacts/verify-architecture-map/repeated-step.png` | `/opt/cursor/artifacts/verify-architecture-map/repeated-step.console.txt` |
 
 Open the PNG and read the console file before reporting success. The console
 file records every assertion, browser console entry, network failure, and final

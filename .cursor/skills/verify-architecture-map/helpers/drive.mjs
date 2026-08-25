@@ -1,16 +1,18 @@
 import { spawn } from 'node:child_process'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { once } from 'node:events'
+import { resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 
 const feature = process.argv[2]
-const features = new Set(['city-browse', 'play-a-flow', 'rail-types'])
+const features = new Set(['city-browse', 'play-a-flow', 'rail-types', 'repeated-step'])
 if (!features.has(feature)) {
-  console.error('usage: node .cursor/skills/verify-architecture-map/helpers/drive.mjs city-browse|play-a-flow|rail-types')
+  console.error('usage: node .cursor/skills/verify-architecture-map/helpers/drive.mjs city-browse|play-a-flow|rail-types|repeated-step')
   process.exit(2)
 }
 
 const url = 'http://127.0.0.1:5197'
+const storeModuleUrl = `/@fs${resolve('architecture-map/assets/stores/useMapView.ts').replaceAll('\\', '/')}`
 const evidenceDir = '/opt/cursor/artifacts/verify-architecture-map'
 const screenshotPath = `${evidenceDir}/${feature}.png`
 const consolePath = `${evidenceDir}/${feature}.console.txt`
@@ -50,6 +52,11 @@ function record(level, source, text) {
 function assert(value, label) {
   if (!value) throw new Error(`assertion failed: ${label}`)
   assertions.push(`${label}=pass`)
+}
+
+function check(value, label, failures) {
+  assertions.push(`${label}=${value ? 'pass' : 'fail'}`)
+  if (!value) failures.push(label)
 }
 
 function waitForEvent(method, timeoutMs = 10000) {
@@ -295,12 +302,109 @@ async function railTypes() {
   assert(state.panelTitle === 'Types', 'types-panel')
 }
 
+async function repeatedStep() {
+  const installed = await evaluate(`(async () => {
+    const graph = await import('/src/graph.ts')
+    const view = await import(${JSON.stringify(storeModuleUrl)})
+    const flow = graph.FLOWS.find((candidate) => candidate.id === 'narrate')
+    if (!flow) return false
+    flow.route.splice(0, flow.route.length, 'rail-view', 'rail-view')
+    view.setActiveFlow(null)
+    await new Promise(requestAnimationFrame)
+    view.setActiveFlow(flow.id)
+    return true
+  })()`)
+  assert(installed, 'repeated-route-installed')
+  await delay(1700)
+
+  const beforeHover = await evaluate(`(() => {
+    const hitTargets = [...document.querySelectorAll('svg polyline[stroke="transparent"]')]
+    const lines = hitTargets.map((target) =>
+      target.parentElement?.querySelector('polyline:not([stroke="transparent"])')
+    )
+    const messageHeading = [...document.querySelectorAll('aside h3')].find((heading) =>
+      heading.textContent === 'Messages'
+    )
+    const rows = [...(messageHeading?.parentElement?.querySelectorAll('li') ?? [])]
+    const badges = [...document.querySelectorAll('svg circle[r="8"]')]
+    return {
+      lineCount: lines.length,
+      strokes: lines.map((line) => line?.getAttribute('stroke')),
+      currentLines: lines.filter((line) =>
+        line?.getAttribute('stroke')?.includes('--am-accent')
+      ).length,
+      currentRows: rows.filter((row) =>
+        row.style.color.includes('--am-accent')
+      ).length,
+      badgeAtMidpoint: badges.map((badge, index) => {
+        const line = lines[index]
+        if (!line) return false
+        const midpoint = line.getPointAtLength(line.getTotalLength() / 2)
+        return Math.hypot(
+          Number(badge.getAttribute('cx')) - midpoint.x,
+          Number(badge.getAttribute('cy')) - midpoint.y,
+        ) < 0.1
+      }),
+      badgeAtEnd: badges.map((badge, index) => {
+        const line = lines[index]
+        if (!line) return false
+        const end = line.getPointAtLength(line.getTotalLength())
+        return Math.hypot(
+          Number(badge.getAttribute('cx')) - end.x,
+          Number(badge.getAttribute('cy')) - end.y,
+        ) < 0.1
+      }),
+    }
+  })()`)
+
+  const hovered = await evaluate(`(() => {
+    const targets = [...document.querySelectorAll('svg polyline[stroke="transparent"]')]
+    const target = targets[1]
+    if (!target) return false
+    target.dispatchEvent(new PointerEvent('pointerover', { bubbles: true }))
+    return true
+  })()`)
+  assert(hovered, 'repeated-second-hovered')
+  await delay(200)
+
+  const afterHover = await evaluate(`(() =>
+    [...document.querySelectorAll('svg polyline[stroke="transparent"]')].map((target) =>
+      target.parentElement
+        ?.querySelector('polyline:not([stroke="transparent"])')
+        ?.getAttribute('stroke')
+    )
+  )()`)
+
+  const changedLines = afterHover
+    .map((stroke, index) => stroke === beforeHover.strokes[index] ? -1 : index)
+    .filter((index) => index >= 0)
+  const failures = []
+  check(beforeHover.lineCount === 2, 'repeated-two-lines', failures)
+  check(beforeHover.currentLines === 1, 'repeated-one-current-line', failures)
+  check(beforeHover.currentRows === 1, 'repeated-one-current-row', failures)
+  check(
+    beforeHover.badgeAtMidpoint.length === 2 && beforeHover.badgeAtMidpoint.every(Boolean),
+    'repeated-badges-at-midpoint',
+    failures,
+  )
+  check(beforeHover.badgeAtEnd.every((atEnd) => !atEnd), 'repeated-badges-off-arrowhead', failures)
+  check(
+    changedLines.length === 1 && changedLines[0] === 1,
+    'repeated-hover-lights-one-copy',
+    failures,
+  )
+  if (failures.length > 0) {
+    throw new Error(`failed checks: ${failures.join(', ')}`)
+  }
+}
+
 let failure
 try {
   await connect()
   if (feature === 'city-browse') await cityBrowse()
   if (feature === 'play-a-flow') await playAFlow()
   if (feature === 'rail-types') await railTypes()
+  if (feature === 'repeated-step') await repeatedStep()
   await capture()
 
   const errors = consoleEntries.filter((entry) => entry.level === 'error')
