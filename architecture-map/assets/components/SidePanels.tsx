@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import type { ArchEdge, ArchFlow, ArchNode, Group } from '../core/types'
 import { sourceEdgeId } from '../core/sequence'
 import { useClockBeatIndex, useClockProgram } from '../stores/useFlowClock'
-import { select, setActiveFlow, setHoverGroup, useMapView } from '../stores/useMapView'
+import { selectCityItem, setActiveFlow, setHoverGroup, useMapView } from '../stores/useMapView'
 import { paint, type as typeface } from './theme'
 
 /**
@@ -115,7 +115,7 @@ export function LegendRail({
                         type="button"
                         id={`am-rail-${node.id}`}
                         aria-pressed={isSelected}
-                        onClick={() => select({ kind: 'node', id: node.id })}
+                        onClick={() => selectCityItem({ kind: 'node', id: node.id })}
                         style={{
                           display: 'flex', width: '100%', alignItems: 'center', gap: 8,
                           padding: '6px 8px', cursor: 'pointer', textAlign: 'left',

@@ -8,7 +8,13 @@ import { buildSequenceLayout, buildSequenceScene, sourceEdgeId, type SequenceLay
 import type { ArchEdge, ArchFlow, ArchNode, Group } from '../core/types'
 import { configureClock, useClockBeatIndex } from '../stores/useFlowClock'
 import { useMapCamera } from '../stores/useMapCamera'
-import { select, setHover, setHoverGroup, useMapView } from '../stores/useMapView'
+import {
+  inspectFlowItem,
+  selectCityItem,
+  setHover,
+  setHoverGroup,
+  useMapView,
+} from '../stores/useMapView'
 import BuildingGlyph, { type BuildingState } from './BuildingGlyph'
 import { DistrictFlags, DistrictPlates } from './DistrictLayer'
 import EdgeLayer, { FlowChoreography } from './EdgeLayer'
@@ -62,6 +68,7 @@ export default function IsoCanvas({
   )
   const geometry = sequence ? sequence.geometry : cityGeometry
   const drawnEdges = sequence ? sequence.edges : edges
+  const selectItem = sequence ? inspectFlowItem : selectCityItem
   const program = useMemo(() => {
     if (sequence) return buildFlowProgram(sequence.flow, sequence.nodes, sequence.edges, sequence.geometry)
     const flow = flows.find((f) => f.id === view.activeFlowId)
@@ -126,7 +133,7 @@ export default function IsoCanvas({
     >
       <svg
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-        onClick={() => select(null)}
+        onClick={() => selectItem(null)}
         {...surfaceProps}
       >
         <defs>
@@ -167,7 +174,7 @@ export default function IsoCanvas({
               beatIndex={beatIndex}
               hover={view.hover}
               selection={view.selection}
-              onSelect={(id) => select({ kind: 'edge', id: sourceEdgeId(id) })}
+              onSelect={(id) => selectItem({ kind: 'edge', id: sourceEdgeId(id) })}
               onHover={(id) => setHover(id ? { kind: 'edge', id: sourceEdgeId(id) } : null)}
             />
 
@@ -179,7 +186,7 @@ export default function IsoCanvas({
                 dimmed={flowSet !== null && !flowSet.has(node.id)}
                 visited={visited?.has(node.id) ?? false}
                 narrated={target === node.id}
-                onSelect={() => select({ kind: 'node', id: node.id })}
+                onSelect={() => selectItem({ kind: 'node', id: node.id })}
                 onHover={(hovering) => setHover(hovering ? { kind: 'node', id: node.id } : null)}
               />
             ))}

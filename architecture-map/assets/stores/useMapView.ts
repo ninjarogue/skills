@@ -53,12 +53,12 @@ function set(next: Partial<MapView>) {
   for (const listener of listeners) listener()
 }
 
-export function select(selection: Selection | null): void {
-  if (state.activeFlowId) {
-    set({ selection })
-    return
-  }
-  set({ selection, activeFlowId: selection ? null : state.activeFlowId })
+export function selectCityItem(selection: Selection | null): void {
+  set({ selection, activeFlowId: null })
+}
+
+export function inspectFlowItem(selection: Selection | null): void {
+  set({ selection })
 }
 
 export function setHover(hover: Selection | null): void {
