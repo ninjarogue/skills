@@ -1,7 +1,6 @@
 import { spawn } from 'node:child_process'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { once } from 'node:events'
-import { resolve } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 
 const feature = process.argv[2]
@@ -12,7 +11,6 @@ if (!features.has(feature)) {
 }
 
 const url = 'http://127.0.0.1:5197'
-const storeModuleUrl = `/@fs${resolve('architecture-map/assets/stores/useMapView.ts').replaceAll('\\', '/')}`
 const evidenceDir = '/opt/cursor/artifacts/verify-architecture-map'
 const screenshotPath = `${evidenceDir}/${feature}.png`
 const consolePath = `${evidenceDir}/${feature}.console.txt`
@@ -305,16 +303,13 @@ async function railTypes() {
 async function repeatedStep() {
   const installed = await evaluate(`(async () => {
     const graph = await import('/src/graph.ts')
-    const view = await import(${JSON.stringify(storeModuleUrl)})
     const flow = graph.FLOWS.find((candidate) => candidate.id === 'narrate')
     if (!flow) return false
     flow.route.splice(0, flow.route.length, 'rail-view', 'rail-view')
-    view.setActiveFlow(null)
-    await new Promise(requestAnimationFrame)
-    view.setActiveFlow(flow.id)
     return true
   })()`)
   assert(installed, 'repeated-route-installed')
+  await clickButton('Play a flow')
   await delay(1700)
 
   const beforeHover = await evaluate(`(() => {
