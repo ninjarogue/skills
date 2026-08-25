@@ -9,7 +9,13 @@ export const GROUPS: Group[] = [
   { id: 'stage', label: 'The stage' },
 ]
 
-const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] = [
+const SOURCES = import.meta.glob('../../assets/**/*.{ts,tsx}', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>
+
+const AUTHORED_NODES: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] = [
   {
     id: 'types',
     code: 'TY',
@@ -20,8 +26,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     howItsBuilt: 'Kept apart from the data so the generated measurements have something to merge into.',
     files: ['assets/core/types.ts'],
     stack: ['TypeScript'],
-    count: 1,
-    loc: 67,
   },
   {
     id: 'iso',
@@ -32,8 +36,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Turns grid cells into screen points. One function, [[toScreen]], is what the floor, the buildings and the packets all agree on.',
     howItsBuilt: 'Classic 2:1 dimetric, plus Manhattan routing and polyline arithmetic so a payload never asks the DOM where it is.',
     files: ['assets/core/iso.ts'],
-    count: 1,
-    loc: 142,
   },
   {
     id: 'archetypes',
@@ -44,8 +46,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Turns a footprint into faces: cubes, towers, fin-rows, the port a packet disappears into.',
     howItsBuilt: 'Pure functions of footprint and height. The React layer only maps faces to polygons.',
     files: ['assets/core/archetypes.ts'],
-    count: 1,
-    loc: 120,
   },
   {
     id: 'layout',
@@ -56,8 +56,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Derives height, archetype and footprint from a file count, then shelves neighbourhoods so the skyline moves with the code.',
     howItsBuilt: 'Shelf packing, twice: buildings inside a plot, then the plots against each other in legend order.',
     files: ['assets/core/layout.ts'],
-    count: 1,
-    loc: 191,
   },
   {
     id: 'districts',
@@ -68,8 +66,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Grows a plate around each group\'s buildings and plants a flag at the front, where a tower cannot bury it.',
     howItsBuilt: 'Rects are derived, never authored — a hand-written plot would be a second claim about where a group lives.',
     files: ['assets/core/districts.ts'],
-    count: 1,
-    loc: 80,
   },
   {
     id: 'routes',
@@ -80,8 +76,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Turns every authored edge into a polyline with arc lengths, so the line, the arrow and the packet agree on where the path is.',
     howItsBuilt: 'One table computed once. Three call sites deriving it separately would disagree by a pixel.',
     files: ['assets/core/routes.ts'],
-    count: 1,
-    loc: 53,
   },
   {
     id: 'scene',
@@ -92,8 +86,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Paint-orders the city, rules the floor grid, and fits a camera to whatever is standing.',
     howItsBuilt: 'DOM-free, so geometry tests can pin it and the canvas keeps nothing but interaction.',
     files: ['assets/core/scene.ts'],
-    count: 1,
-    loc: 105,
   },
   {
     id: 'sequence',
@@ -104,8 +96,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Lays a flow out as a sequence: the modules that speak sit across the top, each step a message further down the page.',
     howItsBuilt: 'A layout swap, not a second renderer. Same buildings, same packets; city footprints and waypoints stay behind.',
     files: ['assets/core/sequence.ts'],
-    count: 1,
-    loc: 200,
   },
   {
     id: 'program',
@@ -116,8 +106,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Turns a flow into dwell, travel, dwell, loop. Captions, tense and packet position are all derived from (program, time).',
     howItsBuilt: 'The clock is a wrapping counter. Meaning lives here so tests can pin boundaries without a renderer.',
     files: ['assets/core/program.ts'],
-    count: 1,
-    loc: 241,
   },
   {
     id: 'map-view',
@@ -128,8 +116,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Holds the selection, the hover, and which flow is the map right now.',
     howItsBuilt: 'A module singleton behind useSyncExternalStore, because the rail, the canvas and the panel all read it.',
     files: ['assets/stores/useMapView.ts'],
-    count: 1,
-    loc: 91,
   },
   {
     id: 'flow-clock',
@@ -140,8 +126,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Advances milliseconds over the active program. Play, pause, speed, the step buttons — one rAF loop.',
     howItsBuilt: 'Subscription tiers keep the 60fps remounts on the packet, not on the buildings.',
     files: ['assets/stores/useFlowClock.ts'],
-    count: 1,
-    loc: 189,
   },
   {
     id: 'map-camera',
@@ -152,8 +136,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Pans, zooms, and refits when the scene key changes — city to sequence is a new key, so the frame recentres.',
     howItsBuilt: 'Derived until touched. A mismatched key falls back to the computed fit; no effect writes the camera.',
     files: ['assets/stores/useMapCamera.ts'],
-    count: 1,
-    loc: 166,
   },
   {
     id: 'iso-canvas',
@@ -164,8 +146,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Builds the city, or the sequence, and paints plates, edges, buildings, packets in that order.',
     howItsBuilt: 'The flow view swaps layout here and then reuses the layers. It does not overlay a diagram on the city.',
     files: ['assets/components/IsoCanvas.tsx'],
-    count: 1,
-    loc: 178,
   },
   {
     id: 'edge-layer',
@@ -176,8 +156,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Draws the paths and the travelling payload. Weight is kind; dash is the step being walked.',
     howItsBuilt: 'The only component on the millisecond clock. Everything else snapshots a beat index.',
     files: ['assets/components/EdgeLayer.tsx'],
-    count: 1,
-    loc: 176,
   },
   {
     id: 'building-glyph',
@@ -188,8 +166,6 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Extrudes one module. Roof chip at rest, full name when it matters.',
     howItsBuilt: 'Paint from theme.ts through SVG attributes, so the map re-themes without a class graph.',
     files: ['assets/components/BuildingGlyph.tsx'],
-    count: 1,
-    loc: 129,
   },
   {
     id: 'side-panels',
@@ -200,17 +176,29 @@ const DRAFT: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'height'>[] =
     whatItDoes: 'Lists the flows first — they are the verbs — then the modules in floor order. The panel is the reading.',
     howItsBuilt: 'Choosing a flow sets the active id; the canvas decides that means a sequence, not a highlight.',
     files: ['assets/components/SidePanels.tsx', 'assets/components/ArchitectureMap.tsx'],
-    count: 2,
-    loc: 428,
   },
 ]
 
-const measured = DRAFT.map((node) => {
-  const measure = { count: node.count ?? 1, loc: node.loc ?? 0 }
+const measured = AUTHORED_NODES.map((node) => {
+  const source = node.files.map((file) => {
+    const contents = SOURCES[`../../${file}`]
+    if (contents === undefined) throw new Error(`Missing playground source: ${file}`)
+    return contents
+  })
+  const measure = {
+    count: source.length,
+    loc: source.reduce((total, contents) => total + contents.trimEnd().split(/\r?\n/).length, 0),
+  }
   const { archetype, params } = deriveArchetype(measure)
   const height = deriveHeight(measure)
   const size = deriveSize(archetype, params, measure)
-  return { node, archetype, params, height, size }
+  return {
+    node: { ...node, ...measure },
+    archetype,
+    params,
+    height,
+    size,
+  }
 })
 
 const footprints = packLayout(
