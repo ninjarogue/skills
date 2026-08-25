@@ -69,11 +69,12 @@ export default function IsoCanvas({
   const geometry = sequence ? sequence.geometry : cityGeometry
   const drawnEdges = sequence ? sequence.edges : edges
   const selectItem = sequence ? inspectFlowItem : selectCityItem
-  const program = useMemo(() => {
-    if (sequence) return buildFlowProgram(sequence.flow, sequence.nodes, sequence.edges, sequence.geometry)
-    const flow = flows.find((f) => f.id === view.activeFlowId)
-    return flow ? buildFlowProgram(flow, nodes, edges, cityGeometry) : null
-  }, [sequence, flows, view.activeFlowId, nodes, edges, cityGeometry])
+  const program = useMemo(
+    () => sequence
+      ? buildFlowProgram(sequence.flow, sequence.nodes, sequence.edges, sequence.geometry)
+      : null,
+    [sequence],
+  )
 
   // The clock is told what to narrate here, where the program is built; the
   // cleanup is what stops a flow that was playing when the page unmounts.
