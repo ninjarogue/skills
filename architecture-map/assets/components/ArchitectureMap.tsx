@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { buildSequenceLayout } from '../core/sequence'
 import type { ArchEdge, ArchFlow, ArchNode, Group } from '../core/types'
 import { pauseClock, resumeClock, setClockSpeed, SPEEDS, useClockPlaying, useClockSpeed } from '../stores/useFlowClock'
 import { clearView, setActiveFlow, useMapView } from '../stores/useMapView'
@@ -57,6 +58,11 @@ export default function ArchitectureMap({ data }: { data: ArchitectureData }) {
   const { activeFlowId, selection } = useMapView()
   const playing = useClockPlaying()
   const speed = useClockSpeed()
+  const authoredFlow = data.flows.find((f) => f.id === activeFlowId)
+  const activeFlow = authoredFlow && buildSequenceLayout(authoredFlow, data.nodes, data.edges)
+    ? authoredFlow
+    : null
+  const invalidFlow = Boolean(authoredFlow && !activeFlow)
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -70,20 +76,19 @@ export default function ArchitectureMap({ data }: { data: ArchitectureData }) {
       const typing =
         target instanceof HTMLElement &&
         (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName))
-      if (e.key === ' ' && !typing && activeFlowId) {
+      if (e.key === ' ' && !typing && activeFlow) {
         e.preventDefault()
         playing ? pauseClock() : resumeClock()
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeFlowId, playing])
+  }, [activeFlow, playing])
 
-  const activeFlow = data.flows.find((f) => f.id === activeFlowId)
   const selectedName =
     selection?.kind === 'node'
       ? (data.nodes.find((n) => n.id === selection.id)?.name ?? 'module')
-      : (activeFlow?.name ?? 'system')
+      : (authoredFlow?.name ?? 'system')
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: paint.surface }}>
@@ -165,7 +170,9 @@ export default function ArchitectureMap({ data }: { data: ArchitectureData }) {
             <span style={LABEL}>
               {activeFlow
                 ? 'sequence of this flow · space plays · drag to pan · esc returns to the city'
-                : 'choose a flow · space plays · drag to pan · scroll to zoom · − + 0 · esc clears'}
+                : invalidFlow
+                  ? 'this flow has no route · esc returns to the city'
+                  : 'choose a flow · space plays · drag to pan · scroll to zoom · − + 0 · esc clears'}
             </span>
           </footer>
         </div>

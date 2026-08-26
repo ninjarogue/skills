@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import type { ArchEdge, ArchFlow, ArchNode, Group } from '../core/types'
-import { sourceEdgeId } from '../core/sequence'
+import { buildSequenceLayout, sourceEdgeId } from '../core/sequence'
 import { useClockBeatIndex, useClockProgram } from '../stores/useFlowClock'
 import { selectCityItem, setActiveFlow, setHoverGroup, useMapView } from '../stores/useMapView'
 import { paint, type as typeface } from './theme'
@@ -181,9 +181,11 @@ export function ExplainerPanel({
   const edge = selection?.kind === 'edge'
     ? edges.find((e) => e.id === sourceEdgeId(selection.id))
     : undefined
-  const flow = !node && !edge ? flows.find((f) => f.id === activeFlowId) : undefined
+  const authoredFlow = !node && !edge ? flows.find((f) => f.id === activeFlowId) : undefined
+  const flow = authoredFlow && buildSequenceLayout(authoredFlow, nodes, edges) ? authoredFlow : undefined
+  const invalidFlow = Boolean(authoredFlow && !flow)
 
-  const title = node?.name ?? (edge ? edge.label : flow?.name ?? intro.title)
+  const title = node?.name ?? (edge ? edge.label : authoredFlow?.name ?? intro.title)
   const lede = node
     ? node.loc
       ? `${node.count} files · ~${node.loc.toLocaleString('en-US')} lines`
@@ -192,9 +194,13 @@ export function ExplainerPanel({
       ? `${nodes.find((n) => n.id === edge.from)?.name} → ${nodes.find((n) => n.id === edge.to)?.name}`
       : flow
         ? flow.payload
-        : intro.lede
-  const what = node?.whatItDoes ?? (edge ? `A ${edge.kind} path. ${edge.label}.` : flow?.summary ?? intro.whatItDoes)
-  const how = node?.howItsBuilt ?? (flow ? undefined : intro.howItsBuilt)
+        : invalidFlow
+          ? 'no route'
+          : intro.lede
+  const what = node?.whatItDoes ?? (edge ? `A ${edge.kind} path. ${edge.label}.` : flow?.summary ?? (
+    invalidFlow ? 'A step in this route is not on the map. The city stays.' : intro.whatItDoes
+  ))
+  const how = node?.howItsBuilt ?? (flow || invalidFlow ? undefined : intro.howItsBuilt)
   const activeBeat = program && beatIndex >= 0 ? program.beats[beatIndex] : undefined
   const currentEdgeIndex = activeBeat?.kind === 'travel' ? activeBeat.edgeIndex : null
   const flowSteps = flow
