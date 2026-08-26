@@ -65,7 +65,7 @@ const AUTHORED_NODES: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'hei
     group: 'geometry',
     whatItDoes: 'Grows a plate around each group\'s buildings and plants a flag at the front, where a tower cannot bury it.',
     howItsBuilt: 'Rects are derived, never authored — a hand-written plot would be a second claim about where a group lives.',
-    files: ['assets/core/districts.ts'],
+    files: ['assets/core/districts.ts', 'assets/components/DistrictLayer.tsx'],
   },
   {
     id: 'routes',
@@ -115,7 +115,7 @@ const AUTHORED_NODES: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'hei
     group: 'narration',
     whatItDoes: 'Holds the selection, the hover, and which flow is the map right now.',
     howItsBuilt: 'A module singleton behind useSyncExternalStore, because the rail, the canvas and the panel all read it.',
-    files: ['assets/stores/useMapView.ts'],
+    files: ['assets/stores/useMapView.ts', 'assets/stores/mapView.ts'],
   },
   {
     id: 'flow-clock',
@@ -165,7 +165,7 @@ const AUTHORED_NODES: Omit<ArchNode, 'archetype' | 'params' | 'footprint' | 'hei
     group: 'stage',
     whatItDoes: 'Extrudes one module. Roof chip at rest, full name when it matters.',
     howItsBuilt: 'Paint from theme.ts through SVG attributes, so the map re-themes without a class graph.',
-    files: ['assets/components/BuildingGlyph.tsx'],
+    files: ['assets/components/BuildingGlyph.tsx', 'assets/components/theme.ts'],
   },
   {
     id: 'side-panels',
@@ -224,7 +224,7 @@ export const EDGES: ArchEdge[] = [
   { id: 'clock-edges', from: 'flow-clock', to: 'edge-layer', kind: 'data', label: 'timeMs', flowIds: ['narrate'] },
 
   { id: 'glyph-canvas', from: 'building-glyph', to: 'iso-canvas', kind: 'call', label: 'onSelect', flowIds: ['browse'] },
-  { id: 'canvas-view', from: 'iso-canvas', to: 'map-view', kind: 'call', label: 'select', flowIds: ['browse'] },
+  { id: 'canvas-view', from: 'iso-canvas', to: 'map-view', kind: 'call', label: 'selectCityItem', flowIds: ['browse'] },
   { id: 'view-rail', from: 'map-view', to: 'side-panels', kind: 'data', label: 'selection', flowIds: ['browse'] },
 
   { id: 'canvas-routes', from: 'iso-canvas', to: 'routes', kind: 'call', label: 'buildEdgeGeometry', flowIds: ['route'] },
@@ -285,6 +285,9 @@ export const ARCHITECTURE: ArchitectureData = {
     howItsBuilt:
       'The transferable idea is a split, not a component library. The playground is here so the flows map can be opened without installing the skill into another repo.',
   },
-  unmapped: [],
+  unmapped: Object.keys(SOURCES)
+    .map((key) => key.replace(/^\.\.\/\.\.\//, ''))
+    .filter((file) => !AUTHORED_NODES.some((node) => node.files.includes(file)))
+    .sort(),
   repo: 'ninjarogue/skills',
 }
