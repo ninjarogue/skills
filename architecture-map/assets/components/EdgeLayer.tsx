@@ -2,7 +2,7 @@
 
 import { arrowhead, type EdgeGeometry } from '../core/routes'
 import { pointAtLength, pointsAttr } from '../core/iso'
-import { edgeTenses, positionAt, type EdgeTense, type FlowProgram } from '../core/program'
+import { edgeTenses, packetPosition, type EdgeTense, type FlowProgram } from '../core/program'
 import type { ArchEdge } from '../core/types'
 import { useClockTimeMs } from '../stores/useFlowClock'
 import type { Selection } from '../stores/useMapView'
@@ -133,7 +133,7 @@ export function FlowChoreography({
 }) {
   const timeMs = useClockTimeMs()
   if (!program) return null
-  const at = positionAt(program, timeMs)
+  const at = packetPosition(program, timeMs)
 
   return (
     <g aria-hidden="true">
@@ -168,8 +168,12 @@ export function FlowChoreography({
         )
       })}
 
-      <circle cx={at.x} cy={at.y} r={5} fill={paint.accent} />
-      <circle cx={at.x} cy={at.y} r={9} fill={paint.accent} opacity={0.25} />
+      {at && (
+        <>
+          <circle cx={at.x} cy={at.y} r={5} fill={paint.accent} />
+          <circle cx={at.x} cy={at.y} r={9} fill={paint.accent} opacity={0.25} />
+        </>
+      )}
     </g>
   )
 }

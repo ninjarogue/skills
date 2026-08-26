@@ -180,6 +180,8 @@ export function positionAt(program: FlowProgram, timeMs: number): ScreenPt {
 }
 
 export function packetPosition(program: FlowProgram, timeMs: number): ScreenPt | null {
+  const beat = program.beats[beatIndexAt(program, timeMs)]
+  if (!beat || beat.kind !== 'travel') return null
   return positionAt(program, timeMs)
 }
 
