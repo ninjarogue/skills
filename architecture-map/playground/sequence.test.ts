@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 import { footprintsOverlap } from '../assets/core/iso'
-import { buildFlowProgram } from '../assets/core/program'
+import { buildFlowProgram, packetPosition, positionAt } from '../assets/core/program'
 import { buildSequenceLayout, sourceEdgeId, sequenceEdgeId } from '../assets/core/sequence'
 import type { ArchEdge, ArchFlow, ArchNode } from '../assets/core/types'
 
@@ -93,6 +93,21 @@ describe('buildSequenceLayout', () => {
     const geom = layout.geometry.get('0::api-api')!
     assert.ok(geom.pts.length > 2)
     assert.equal(geom.pts[0].x, geom.pts[geom.pts.length - 1].x)
+  })
+
+  it('does not carry a drawn packet between disconnected message rows', () => {
+    const layout = buildSequenceLayout(flow(['auth-api', 'api-db']), NODES, EDGES)
+    assert.ok(layout)
+    const program = buildFlowProgram(layout.flow, layout.nodes, layout.edges, layout.geometry)
+    assert.ok(program)
+    const travels = program.beats.filter((beat) => beat.kind === 'travel')
+    const dwell = travels[0].start + travels[0].duration + 1
+    const next = travels[1].start
+    const park = positionAt(program, dwell)
+    const hop = positionAt(program, next)
+    assert.ok(hop.y - park.y > 50, 'rows stay a MESSAGE_ROW apart')
+    assert.equal(packetPosition(program, dwell), null)
+    assert.deepEqual(packetPosition(program, next), hop)
   })
 
   it('feeds the existing beat program without inventing edges', () => {

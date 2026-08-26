@@ -179,6 +179,10 @@ export function positionAt(program: FlowProgram, timeMs: number): ScreenPt {
   return program.geoms[0].pts[0]
 }
 
+export function packetPosition(program: FlowProgram, timeMs: number): ScreenPt | null {
+  return positionAt(program, timeMs)
+}
+
 /** The next beat's start; past the end it wraps to 0. */
 export function nextBoundary(program: FlowProgram, timeMs: number): number {
   const i = beatIndexAt(program, timeMs)
