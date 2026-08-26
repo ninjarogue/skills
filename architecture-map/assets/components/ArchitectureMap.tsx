@@ -71,7 +71,6 @@ export default function ArchitectureMap({ data }: { data: ArchitectureData }) {
         clearView()
         return
       }
-      // Space is the transport, but never while someone is typing.
       const target = e.target as HTMLElement | null
       const typing =
         target instanceof HTMLElement &&
