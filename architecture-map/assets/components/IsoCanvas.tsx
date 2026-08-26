@@ -1,13 +1,20 @@
 'use client'
 
 import { useEffect, useMemo } from 'react'
-import { buildEdgeGeometry } from '../core/routes'
 import { buildFlowProgram, currentTargetNodeId, flowNodeIdSet, visitedNodeIds } from '../core/program'
+import { buildEdgeGeometry } from '../core/routes'
 import { buildScene } from '../core/scene'
+import { buildSequenceLayout, buildSequenceScene, type SequenceLayout } from '../core/sequence'
 import type { ArchEdge, ArchFlow, ArchNode, Group } from '../core/types'
 import { configureClock, useClockBeatIndex } from '../stores/useFlowClock'
 import { useMapCamera } from '../stores/useMapCamera'
-import { select, setHover, setHoverGroup, useMapView } from '../stores/useMapView'
+import {
+  inspectFlowItem,
+  selectCityItem,
+  setHover,
+  setHoverGroup,
+  useMapView,
+} from '../stores/useMapView'
 import BuildingGlyph, { type BuildingState } from './BuildingGlyph'
 import { DistrictFlags, DistrictPlates } from './DistrictLayer'
 import EdgeLayer, { FlowChoreography } from './EdgeLayer'
@@ -49,12 +56,25 @@ export default function IsoCanvas({
   // two dozen buildings through a re-render with it.
   const beatIndex = useClockBeatIndex()
 
-  const scene = useMemo(() => buildScene(groups, nodes), [groups, nodes])
-  const geometry = useMemo(() => buildEdgeGeometry(nodes, edges), [nodes, edges])
-  const program = useMemo(() => {
+  const cityScene = useMemo(() => buildScene(groups, nodes), [groups, nodes])
+  const cityGeometry = useMemo(() => buildEdgeGeometry(nodes, edges), [nodes, edges])
+  const sequence = useMemo(() => {
     const flow = flows.find((f) => f.id === view.activeFlowId)
-    return flow ? buildFlowProgram(flow, nodes, edges, geometry) : null
-  }, [flows, view.activeFlowId, nodes, edges, geometry])
+    return flow ? buildSequenceLayout(flow, nodes, edges) : null
+  }, [flows, view.activeFlowId, nodes, edges])
+  const scene = useMemo(
+    () => (sequence ? buildSequenceScene(sequence) : cityScene),
+    [sequence, cityScene],
+  )
+  const geometry = sequence ? sequence.geometry : cityGeometry
+  const drawnEdges = sequence ? sequence.edges : edges
+  const selectItem = sequence ? inspectFlowItem : selectCityItem
+  const program = useMemo(
+    () => sequence
+      ? buildFlowProgram(sequence.flow, sequence.nodes, sequence.edges, sequence.geometry)
+      : null,
+    [sequence],
+  )
 
   // The clock is told what to narrate here, where the program is built; the
   // cleanup is what stops a flow that was playing when the page unmounts.
@@ -114,7 +134,7 @@ export default function IsoCanvas({
     >
       <svg
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-        onClick={() => select(null)}
+        onClick={() => selectItem(null)}
         {...surfaceProps}
       >
         <defs>
@@ -137,21 +157,25 @@ export default function IsoCanvas({
               ))}
             </g>
 
-            <DistrictPlates
-              districts={scene.districts}
-              lit={litGroup}
-              flowLit={program !== null}
-              onHover={setHoverGroup}
-            />
+            {sequence ? (
+              <SequenceGuides layout={sequence} />
+            ) : (
+              <DistrictPlates
+                districts={scene.districts}
+                lit={litGroup}
+                flowLit={false}
+                onHover={setHoverGroup}
+              />
+            )}
 
             <EdgeLayer
-              edges={edges}
+              edges={drawnEdges}
               geometry={geometry}
               program={program}
               beatIndex={beatIndex}
               hover={view.hover}
               selection={view.selection}
-              onSelect={(id) => select({ kind: 'edge', id })}
+              onSelect={(id) => selectItem({ kind: 'edge', id })}
               onHover={(id) => setHover(id ? { kind: 'edge', id } : null)}
             />
 
@@ -163,16 +187,38 @@ export default function IsoCanvas({
                 dimmed={flowSet !== null && !flowSet.has(node.id)}
                 visited={visited?.has(node.id) ?? false}
                 narrated={target === node.id}
-                onSelect={() => select({ kind: 'node', id: node.id })}
+                onSelect={() => selectItem({ kind: 'node', id: node.id })}
                 onHover={(hovering) => setHover(hovering ? { kind: 'node', id: node.id } : null)}
               />
             ))}
 
-            <DistrictFlags districts={scene.districts} lit={litGroup} flowLit={program !== null} />
+            {sequence ? null : (
+              <DistrictFlags districts={scene.districts} lit={litGroup} flowLit={false} />
+            )}
             <FlowChoreography program={program} beatIndex={beatIndex} />
           </g>
         )}
       </svg>
     </div>
+  )
+}
+
+function SequenceGuides({ layout }: { layout: SequenceLayout }) {
+  return (
+    <g aria-hidden="true">
+      {layout.lifelines.map((line) => (
+        <line
+          key={line.id}
+          x1={line.a.x}
+          y1={line.a.y}
+          x2={line.b.x}
+          y2={line.b.y}
+          stroke={paint.structure}
+          strokeWidth={1}
+          strokeOpacity={0.35}
+          vectorEffect="non-scaling-stroke"
+        />
+      ))}
+    </g>
   )
 }

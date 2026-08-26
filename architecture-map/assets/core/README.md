@@ -13,5 +13,6 @@ the same in every repo the map is installed into.
 | `routes.ts` | Every edge as a drawn line, with arc lengths precomputed |
 | `scene.ts` | Paint-ordered scene, floor grid, camera fit and zoom |
 | `program.ts` | A flow turned into a beat timeline: dwell, travel, dwell, loop |
+| `sequence.ts` | The flows map: participants across, time down, same packets |
 
 Nothing here touches the DOM, so all of it is unit-testable without a renderer.

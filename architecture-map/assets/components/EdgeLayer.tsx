@@ -1,8 +1,8 @@
 'use client'
 
 import { arrowhead, type EdgeGeometry } from '../core/routes'
-import { pointsAttr } from '../core/iso'
-import { edgeTenses, positionAt, type EdgeTense, type FlowProgram } from '../core/program'
+import { pointAtLength, pointsAttr } from '../core/iso'
+import { edgeTenses, packetPosition, type EdgeTense, type FlowProgram } from '../core/program'
 import type { ArchEdge } from '../core/types'
 import { useClockTimeMs } from '../stores/useFlowClock'
 import type { Selection } from '../stores/useMapView'
@@ -28,15 +28,14 @@ const DASH: Record<string, string | undefined> = {
 }
 
 function paintFor(
-  edge: ArchEdge,
   tense: EdgeTense | null,
   emphasized: boolean,
   flowLit: boolean,
 ): { stroke: string; width: number; opacity: number } {
+  if (emphasized) return { stroke: paint.inkPrimary, width: 1.5, opacity: 1 }
   if (tense === 'current') return { stroke: paint.accent, width: 2, opacity: 1 }
   if (tense === 'visited') return { stroke: paint.accent, width: 1.5, opacity: 0.75 }
   if (tense === 'upcoming') return { stroke: paint.structure, width: 1, opacity: 0.5 }
-  if (emphasized) return { stroke: paint.inkPrimary, width: 1.5, opacity: 1 }
   return { stroke: paint.structure, width: 1, opacity: flowLit ? 0.2 : 0.6 }
 }
 
@@ -70,7 +69,7 @@ export default function EdgeLayer({
         const emphasized =
           (hover?.kind === 'edge' && hover.id === edge.id) ||
           (selection?.kind === 'edge' && selection.id === edge.id)
-        const style = paintFor(edge, tense, emphasized, program !== null)
+        const style = paintFor(tense, emphasized, program !== null)
         const head = edge.kind === 'support' ? null : arrowhead(geom)
 
         return (
@@ -134,14 +133,14 @@ export function FlowChoreography({
 }) {
   const timeMs = useClockTimeMs()
   if (!program) return null
-  const at = positionAt(program, timeMs)
+  const at = packetPosition(program, timeMs)
 
   return (
     <g aria-hidden="true">
       {program.beats.map((beat, i) => {
         if (beat.kind !== 'travel') return null
         const geom = program.geoms[beat.edgeIndex]
-        const mid = geom.pts[Math.floor(geom.pts.length / 2)]
+        const mid = pointAtLength(geom.pts, geom.cum, geom.total / 2)
         const done = i < beatIndex
         return (
           <g key={beat.edgeId} opacity={done || i === beatIndex ? 1 : 0.45}>
@@ -169,8 +168,12 @@ export function FlowChoreography({
         )
       })}
 
-      <circle cx={at.x} cy={at.y} r={5} fill={paint.accent} />
-      <circle cx={at.x} cy={at.y} r={9} fill={paint.accent} opacity={0.25} />
+      {at && (
+        <>
+          <circle cx={at.x} cy={at.y} r={5} fill={paint.accent} />
+          <circle cx={at.x} cy={at.y} r={9} fill={paint.accent} opacity={0.25} />
+        </>
+      )}
     </g>
   )
 }

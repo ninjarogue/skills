@@ -2,7 +2,9 @@
 
 import { useEffect } from 'react'
 import type { ArchEdge, ArchFlow, ArchNode, Group } from '../core/types'
-import { select, setActiveFlow, setHoverGroup, useMapView } from '../stores/useMapView'
+import { buildSequenceLayout, sourceEdgeId } from '../core/sequence'
+import { useClockBeatIndex, useClockProgram } from '../stores/useFlowClock'
+import { selectCityItem, setActiveFlow, setHoverGroup, useMapView } from '../stores/useMapView'
 import { paint, type as typeface } from './theme'
 
 /**
@@ -113,7 +115,7 @@ export function LegendRail({
                         type="button"
                         id={`am-rail-${node.id}`}
                         aria-pressed={isSelected}
-                        onClick={() => select({ kind: 'node', id: node.id })}
+                        onClick={() => selectCityItem({ kind: 'node', id: node.id })}
                         style={{
                           display: 'flex', width: '100%', alignItems: 'center', gap: 8,
                           padding: '6px 8px', cursor: 'pointer', textAlign: 'left',
@@ -171,21 +173,42 @@ export function ExplainerPanel({
   edges: readonly ArchEdge[]
   flows: readonly ArchFlow[]
 }) {
-  const { selection } = useMapView()
+  const { selection, activeFlowId } = useMapView()
+  const program = useClockProgram()
+  const beatIndex = useClockBeatIndex()
 
   const node = selection?.kind === 'node' ? nodes.find((n) => n.id === selection.id) : undefined
-  const edge = selection?.kind === 'edge' ? edges.find((e) => e.id === selection.id) : undefined
+  const edge = selection?.kind === 'edge'
+    ? edges.find((e) => e.id === sourceEdgeId(selection.id))
+    : undefined
+  const authoredFlow = !node && !edge ? flows.find((f) => f.id === activeFlowId) : undefined
+  const flow = authoredFlow && buildSequenceLayout(authoredFlow, nodes, edges) ? authoredFlow : undefined
+  const invalidFlow = Boolean(authoredFlow && !flow)
 
-  const title = node?.name ?? (edge ? edge.label : intro.title)
+  const title = node?.name ?? (edge ? edge.label : authoredFlow?.name ?? intro.title)
   const lede = node
     ? node.loc
       ? `${node.count} files · ~${node.loc.toLocaleString('en-US')} lines`
       : undefined
     : edge
       ? `${nodes.find((n) => n.id === edge.from)?.name} → ${nodes.find((n) => n.id === edge.to)?.name}`
-      : intro.lede
-  const what = node?.whatItDoes ?? (edge ? `A ${edge.kind} path. ${edge.label}.` : intro.whatItDoes)
-  const how = node?.howItsBuilt ?? intro.howItsBuilt
+      : flow
+        ? flow.payload
+        : invalidFlow
+          ? 'no route'
+          : intro.lede
+  const what = node?.whatItDoes ?? (edge ? `A ${edge.kind} path. ${edge.label}.` : flow?.summary ?? (
+    invalidFlow ? 'A step in this route is not on the map. The city stays.' : intro.whatItDoes
+  ))
+  const how = node?.howItsBuilt ?? (flow || invalidFlow ? undefined : intro.howItsBuilt)
+  const activeBeat = program && beatIndex >= 0 ? program.beats[beatIndex] : undefined
+  const currentEdgeIndex = activeBeat?.kind === 'travel' ? activeBeat.edgeIndex : null
+  const flowSteps = flow
+    ? flow.route.flatMap((id) => {
+        const step = edges.find((e) => e.id === id)
+        return step ? [step] : []
+      })
+    : []
   const carries = node ? flows.filter((f) => f.route.some((id) => {
     const e = edges.find((x) => x.id === id)
     return e && (e.from === node.id || e.to === node.id)
@@ -205,6 +228,34 @@ export function ExplainerPanel({
 
       <Prose text={what} />
       {how && <Prose text={how} />}
+
+      {flowSteps.length > 0 && (
+        <section style={{ marginTop: 20 }}>
+          <h3 style={LABEL}>Messages</h3>
+          <ol style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {flowSteps.map((step, i) => {
+              const current = i === currentEdgeIndex
+              const from = nodes.find((n) => n.id === step.from)?.name ?? step.from
+              const to = nodes.find((n) => n.id === step.to)?.name ?? step.to
+              return (
+                <li
+                  key={`${i}:${step.id}`}
+                  style={{
+                    fontFamily: typeface.body, fontSize: 12, lineHeight: 1.45,
+                    color: current ? paint.accent : paint.inkSecondary,
+                  }}
+                >
+                  <span style={{ ...LABEL, color: current ? paint.accent : paint.inkTertiary, marginRight: 8 }}>
+                    {i + 1}
+                  </span>
+                  {from} → {to}
+                  <span style={{ ...LABEL, marginLeft: 8 }}>{step.label}</span>
+                </li>
+              )
+            })}
+          </ol>
+        </section>
+      )}
 
       {carries.length > 0 && (
         <section style={{ marginTop: 20 }}>
