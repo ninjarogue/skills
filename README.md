@@ -7,6 +7,7 @@ any harness that reads it (Claude Code, Codex, Cursor, Gemini CLI, and others).
 |---|---|
 | [architecture-map](architecture-map/) | Builds an interactive isometric map of a repository — buildings sized by real measurements, flows tracing real call paths, and a drift counter that fails CI when the map falls behind the code. Open the [playground](architecture-map/playground/) to see the city and a flow's sequence map. |
 | [ousterhout-pr-review](ousterhout-pr-review/) | Low-read review for agent-written PRs when the bottleneck is understanding the codebase — intent, shape, and proof (Ousterhout lens), not the whole diff. |
+| [ousterhout-design](ousterhout-design/) | Design/lock architecture before and during implementation — deep modules, information hiding, red-flag checklist (not the PR-review lens). |
 
 ## Installing
 
